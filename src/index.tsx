@@ -827,6 +827,10 @@ const StyledEditor = styled("div")<{
       max-width: 100%;
       max-height: 75vh;
     }
+
+    .ProseMirror-selectednode img {
+      pointer-events: initial;
+    }
   }
 
   .image.placeholder {
@@ -904,7 +908,7 @@ const StyledEditor = styled("div")<{
   h6 {
     margin: 1em 0 0.5em;
     font-weight: 500;
-    cursor: default;
+    cursor: text;
 
     &:not(.placeholder):before {
       display: ${props => (props.readOnly ? "none" : "inline-block")};
@@ -1059,12 +1063,6 @@ const StyledEditor = styled("div")<{
     }
   }
 
-  @media print {
-    .placeholder {
-      display: none;
-    }
-  }
-
   .notice-block {
     display: flex;
     align-items: center;
@@ -1116,7 +1114,7 @@ const StyledEditor = styled("div")<{
 
   blockquote {
     margin: 0;
-    padding-left: 1em;
+    padding-left: 1.5em;
     font-style: italic;
     overflow: hidden;
     position: relative;
@@ -1124,10 +1122,10 @@ const StyledEditor = styled("div")<{
     &:before {
       content: "";
       display: inline-block;
-      width: 3px;
+      width: 2px;
       border-radius: 1px;
       position: absolute;
-      margin-${props => (props.rtl ? "right" : "left")}: -16px;
+      margin-${props => (props.rtl ? "right" : "left")}: -1.5em;
       top: 0;
       bottom: 0;
       background: ${props => props.theme.quote};
@@ -1154,6 +1152,10 @@ const StyledEditor = styled("div")<{
 
   p {
     margin: 0;
+
+    span:first-child + br:last-child {
+      display: none;
+    }
   }
 
   a {
@@ -1215,17 +1217,27 @@ const StyledEditor = styled("div")<{
 
   ul li::before,
   ol li::before {
-    background: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3QgeD0iOCIgeT0iNyIgd2lkdGg9IjMiIGhlaWdodD0iMiIgcng9IjEiIGZpbGw9IiM0RTVDNkUiLz4KPHJlY3QgeD0iOCIgeT0iMTEiIHdpZHRoPSIzIiBoZWlnaHQ9IjIiIHJ4PSIxIiBmaWxsPSIjNEU1QzZFIi8+CjxyZWN0IHg9IjgiIHk9IjE1IiB3aWR0aD0iMyIgaGVpZ2h0PSIyIiByeD0iMSIgZmlsbD0iIzRFNUM2RSIvPgo8cmVjdCB4PSIxMyIgeT0iNyIgd2lkdGg9IjMiIGhlaWdodD0iMiIgcng9IjEiIGZpbGw9IiM0RTVDNkUiLz4KPHJlY3QgeD0iMTMiIHk9IjExIiB3aWR0aD0iMyIgaGVpZ2h0PSIyIiByeD0iMSIgZmlsbD0iIzRFNUM2RSIvPgo8cmVjdCB4PSIxMyIgeT0iMTUiIHdpZHRoPSIzIiBoZWlnaHQ9IjIiIHJ4PSIxIiBmaWxsPSIjNEU1QzZFIi8+Cjwvc3ZnPgo=");
+    background: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3QgeD0iOCIgeT0iNyIgd2lkdGg9IjMiIGhlaWdodD0iMiIgcng9IjEiIGZpbGw9IiM0RTVDNkUiLz4KPHJlY3QgeD0iOCIgeT0iMTEiIHdpZHRoPSIzIiBoZWlnaHQ9IjIiIHJ4PSIxIiBmaWxsPSIjNEU1QzZFIi8+CjxyZWN0IHg9IjgiIHk9IjE1IiB3aWR0aD0iMyIgaGVpZ2h0PSIyIiByeD0iMSIgZmlsbD0iIzRFNUM2RSIvPgo8cmVjdCB4PSIxMyIgeT0iNyIgd2lkdGg9IjMiIGhlaWdodD0iMiIgcng9IjEiIGZpbGw9IiM0RTVDNkUiLz4KPHJlY3QgeD0iMTMiIHk9IjExIiB3aWR0aD0iMyIgaGVpZ2h0PSIyIiByeD0iMSIgZmlsbD0iIzRFNUM2RSIvPgo8cmVjdCB4PSIxMyIgeT0iMTUiIHdpZHRoPSIzIiBoZWlnaHQ9IjIiIHJ4PSIxIiBmaWxsPSIjNEU1QzZFIi8+Cjwvc3ZnPgo=") no-repeat;
+    background-position: 0 2px;
     content: "";
     display: ${props => (props.readOnly ? "none" : "inline-block")};
-    cursor: move;
+    cursor: grab;
     width: 24px;
     height: 24px;
     position: absolute;
     ${props => (props.rtl ? "right" : "left")}: -40px;
-    top: 2px;
     opacity: 0;
     transition: opacity 200ms ease-in-out;
+  }
+
+  ul li[draggable=true]::before,
+  ol li[draggable=true]::before {
+    cursor: grabbing;
+  }
+
+  ul > li.counter-2::before,
+  ol li.counter-2::before {
+    ${props => (props.rtl ? "right" : "left")}: -50px;
   }
 
   ul > li.hovering::before,
@@ -1243,6 +1255,7 @@ const StyledEditor = styled("div")<{
   }
 
   ul.checkbox_list li input {
+    cursor: pointer;
     pointer-events: ${props =>
       props.readOnly && !props.readOnlyWriteCheckboxes ? "none" : "initial"};
     opacity: ${props =>
@@ -1697,16 +1710,6 @@ const StyledEditor = styled("div")<{
     }
   }
 
-  @media print {
-    .block-menu-trigger {
-      display: none;
-    }
-
-    .page-break {
-      opacity: 0;
-    }
-  }
-
   .ProseMirror-gapcursor {
     display: none;
     pointer-events: none;
@@ -1738,6 +1741,22 @@ const StyledEditor = styled("div")<{
   }
 
   @media print {
+    .placeholder:before,
+    .block-menu-trigger,
+    .heading-actions,
+    h1:not(.placeholder):before,
+    h2:not(.placeholder):before,
+    h3:not(.placeholder):before,
+    h4:not(.placeholder):before,
+    h5:not(.placeholder):before,
+    h6:not(.placeholder):before {
+      display: none;
+    }
+
+    .page-break {
+      opacity: 0;
+    }
+
     em,
     blockquote {
       font-family: "SF Pro Text", ${props => props.theme.fontFamily};
