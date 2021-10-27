@@ -1,4 +1,4 @@
-import { Plugin } from "prosemirror-state";
+import { Plugin, Selection } from "prosemirror-state";
 import copy from "copy-to-clipboard";
 import { Decoration, DecorationSet } from "prosemirror-view";
 import { Node as ProsemirrorNode, NodeType } from "prosemirror-model";
@@ -6,6 +6,7 @@ import { textblockTypeInputRule } from "prosemirror-inputrules";
 import { MarkdownSerializerState } from "prosemirror-markdown";
 import backspaceToParagraph from "../commands/backspaceToParagraph";
 import toggleBlockType from "../commands/toggleBlockType";
+import splitHeading from "../commands/splitHeading";
 import headingToSlug, { headingToPersistenceKey } from "../lib/headingToSlug";
 import Node from "./Node";
 import { ToastType } from "../types";
@@ -48,7 +49,6 @@ export default class Heading extends Node {
         anchor.innerText = "#";
         anchor.type = "button";
         anchor.className = "heading-anchor";
-        anchor.contentEditable = "false";
         anchor.addEventListener("click", event => this.handleCopyLink(event));
 
         const fold = document.createElement("button");
@@ -59,7 +59,6 @@ export default class Heading extends Node {
         fold.className = `heading-fold ${
           node.attrs.collapsed ? "collapsed" : ""
         }`;
-        fold.contentEditable = "false";
         fold.addEventListener("click", event => this.handleFoldContent(event));
 
         return [
@@ -67,6 +66,7 @@ export default class Heading extends Node {
           [
             "span",
             {
+              contentEditable: false,
               class: `heading-actions ${
                 node.attrs.collapsed ? "collapsed" : ""
               }`,
@@ -119,7 +119,15 @@ export default class Heading extends Node {
       const node = view.state.doc.nodeAt(result.inside);
 
       if (node) {
+        const endOfHeadingPos = result.inside + node.nodeSize;
+        const $pos = view.state.doc.resolve(endOfHeadingPos);
         const collapsed = !node.attrs.collapsed;
+
+        if (collapsed && view.state.selection.to > endOfHeadingPos) {
+          // move selection to the end of the collapsed heading
+          tr.setSelection(Selection.near($pos, -1));
+        }
+
         const transaction = tr.setNodeMarkup(result.inside, undefined, {
           ...node.attrs,
           collapsed,
@@ -134,6 +142,7 @@ export default class Heading extends Node {
         }
 
         view.dispatch(transaction);
+        view.focus();
       }
     }
   };
@@ -178,6 +187,7 @@ export default class Heading extends Node {
     return {
       ...options,
       Backspace: backspaceToParagraph(type),
+      Enter: splitHeading(type),
     };
   }
 
