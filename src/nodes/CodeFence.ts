@@ -17,6 +17,7 @@ import sql from "refractor/lang/sql";
 import typescript from "refractor/lang/typescript";
 import yaml from "refractor/lang/yaml";
 
+import { Selection, TextSelection, Transaction } from "prosemirror-state";
 import { textblockTypeInputRule } from "prosemirror-inputrules";
 import copy from "copy-to-clipboard";
 import Prism, { LANGUAGES } from "../plugins/Prism";
@@ -124,9 +125,23 @@ export default class CodeFence extends Node {
       "Shift-Ctrl-\\": toggleBlockType(type, schema.nodes.paragraph),
       "Shift-Enter": (state, dispatch) => {
         if (!isInCode(state)) return false;
+        const {
+          tr,
+          selection,
+        }: { tr: Transaction; selection: TextSelection } = state;
+        const text = selection?.$anchor?.nodeBefore?.text;
 
-        const { tr, selection } = state;
-        dispatch(tr.insertText("\n", selection.from, selection.to));
+        let newText = "\n";
+
+        if (text) {
+          const splitByNewLine = text.split("\n");
+          const numOfSpaces = splitByNewLine[splitByNewLine.length - 1].search(
+            /\S|$/
+          );
+          newText += " ".repeat(numOfSpaces);
+        }
+
+        dispatch(tr.insertText(newText, selection.from, selection.to));
         return true;
       },
       Tab: (state, dispatch) => {
@@ -168,9 +183,12 @@ export default class CodeFence extends Node {
 
     if (result) {
       const language = element.value;
-      const transaction = tr.setNodeMarkup(result.inside, undefined, {
-        language,
-      });
+
+      const transaction = tr
+        .setSelection(Selection.near(view.state.doc.resolve(result.inside)))
+        .setNodeMarkup(result.inside, undefined, {
+          language,
+        });
       view.dispatch(transaction);
 
       localStorage?.setItem(PERSISTENCE_KEY, language);
