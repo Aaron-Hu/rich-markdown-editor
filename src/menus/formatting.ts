@@ -6,6 +6,7 @@ import {
   BlockQuoteIcon,
   LinkIcon,
   StrikethroughIcon,
+  ItalicIcon,
   OrderedListIcon,
   BulletedListIcon,
   TodoListIcon,
@@ -53,6 +54,12 @@ export default function formattingMenuItems(
       tooltip: dictionary.strikethrough,
       icon: StrikethroughIcon,
       active: isMarkActive(schema.marks.strikethrough),
+    },
+    {
+      name: "em",
+      tooltip: dictionary.em,
+      icon: ItalicIcon,
+      active: isMarkActive(schema.marks.em),
     },
     {
       name: "highlight",

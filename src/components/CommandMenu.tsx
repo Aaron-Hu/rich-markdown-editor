@@ -176,7 +176,8 @@ class CommandMenu<T = MenuItem> extends React.Component<Props<T>, State> {
   insertItem = item => {
     switch (item.name) {
       case "image":
-        return this.triggerImagePick();
+        this.clearSearch();
+        return this.triggerLinkInput(item);
       case "embed":
         return this.triggerLinkInput(item);
       case "link": {
@@ -192,6 +193,55 @@ class CommandMenu<T = MenuItem> extends React.Component<Props<T>, State> {
 
   close = () => {
     this.props.onClose();
+    this.props.view.focus();
+  };
+
+  handleLinkImageKeydown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!this.props.isActive) return;
+    if (!this.state.insertItem) return;
+
+    if (event.key === "Enter") {
+      event.preventDefault();
+      event.stopPropagation();
+
+      this.props.onClose();
+      this.props.view.focus();
+    }
+
+    if (event.key === "Escape") {
+      this.props.onClose();
+      this.props.view.focus();
+    }
+  };
+
+  handleLinkImageBlur = (event: React.FocusEvent<HTMLInputElement>) => {
+    if (!this.props.isActive) return;
+    if (!this.state.insertItem) return;
+
+    const src = event.currentTarget.value;
+    if (!src) {
+      this.props.onClose();
+      this.props.view.focus();
+      return;
+    }
+
+    const { view } = this.props;
+
+    const { state } = view;
+    const { from, to } = state.selection;
+    if (from !== to) {
+      // selection must be collapsed
+      return;
+    }
+
+    this.props.onClose();
+    const transaction = view.state.tr.insert(
+      view.state.selection.from,
+      state.schema.nodes.image.create({ src })
+    );
+    // .setMeta(uploadPlaceholderPlugin, { remove: { id } });
+
+    view.dispatch(transaction);
     this.props.view.focus();
   };
 
@@ -471,8 +521,9 @@ class CommandMenu<T = MenuItem> extends React.Component<Props<T>, State> {
                     ? dictionary.pasteLinkWithTitle(insertItem.title)
                     : dictionary.pasteLink
                 }
-                onKeyDown={this.handleLinkInputKeydown}
-                onPaste={this.handleLinkInputPaste}
+                onKeyDown={this.handleLinkImageKeydown}
+                onBlur={this.handleLinkImageBlur}
+                // onPaste={this.handleLinkInputPaste}
                 autoFocus
               />
             </LinkInputWrapper>
